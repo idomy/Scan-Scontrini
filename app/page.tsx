@@ -18,6 +18,22 @@ const CATEGORY_LABEL: Record<Category, string> = {
 const eur = (n: number | null) =>
   n == null ? "—" : n.toLocaleString("it-IT", { style: "currency", currency: "EUR" });
 
+/** Data + ora leggibili da un timestamp ISO (es. created_at). */
+const dateTime = (iso: string | null) =>
+  iso
+    ? new Date(iso).toLocaleString("it-IT", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "—";
+
+/** Solo data da una stringa YYYY-MM-DD. */
+const dateOnly = (d: string | null) =>
+  d ? new Date(d + "T00:00:00").toLocaleDateString("it-IT") : "n/d";
+
 /** Ridimensiona l'immagine client-side (max 1600px) per contenere il payload. */
 async function toResizedBase64(file: File): Promise<{ base64: string; mimeType: string }> {
   const bitmap = await createImageBitmap(file);
@@ -37,6 +53,7 @@ export default function Home() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [receipts, setReceipts] = useState<ReceiptRow[]>([]);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const loadReceipts = useCallback(async () => {
@@ -278,29 +295,83 @@ export default function Home() {
           </div>
 
           <ul className="divide-y divide-stone-200 rounded-2xl border border-stone-200 bg-white">
-            {receipts.map((r) => (
-              <li key={r.id} className="group flex items-center gap-3 px-4 py-3">
-                <span className="text-lg">
-                  {(CATEGORY_LABEL[r.category as Category] ?? "📎").split(" ")[0]}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{r.merchant ?? "Sconosciuto"}</p>
-                  <p className="text-xs text-stone-400">
-                    {r.receipt_date
-                      ? new Date(r.receipt_date + "T00:00:00").toLocaleDateString("it-IT")
-                      : "data n/d"}
-                  </p>
-                </div>
-                <span className="text-sm font-semibold tabular-nums">{eur(r.total)}</span>
-                <button
-                  onClick={() => deleteReceipt(r.id)}
-                  aria-label="Elimina"
-                  className="ml-1 text-stone-300 opacity-0 transition group-hover:opacity-100 hover:text-red-500"
-                >
-                  ✕
-                </button>
-              </li>
-            ))}
+            {receipts.map((r) => {
+              const open = expandedId === r.id;
+              return (
+                <li key={r.id} className="group">
+                  <div className="flex items-center gap-3 px-4 py-3">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedId(open ? null : r.id)}
+                      aria-expanded={open}
+                      className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                    >
+                      <span className="text-lg">
+                        {(CATEGORY_LABEL[r.category as Category] ?? "📎").split(" ")[0]}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium">
+                          {r.merchant ?? "Sconosciuto"}
+                        </span>
+                        <span className="block text-xs text-stone-400">
+                          🕐 {dateTime(r.created_at)}
+                        </span>
+                      </span>
+                      <span className="text-xs text-stone-300">{open ? "▲" : "▼"}</span>
+                    </button>
+                    <span className="text-sm font-semibold tabular-nums">{eur(r.total)}</span>
+                    <button
+                      onClick={() => deleteReceipt(r.id)}
+                      aria-label="Elimina"
+                      className="ml-1 text-stone-300 opacity-0 transition group-hover:opacity-100 hover:text-red-500"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {open && (
+                    <div className="border-t border-stone-100 bg-stone-50/60 px-4 py-3 text-sm">
+                      <div className="mb-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-stone-500">
+                        <span>
+                          Scansionato:{" "}
+                          <span className="text-stone-700">{dateTime(r.created_at)}</span>
+                        </span>
+                        <span>
+                          Data scontrino:{" "}
+                          <span className="text-stone-700">{dateOnly(r.receipt_date)}</span>
+                        </span>
+                        <span>
+                          Pagamento:{" "}
+                          <span className="text-stone-700">{r.payment_method ?? "n/d"}</span>
+                        </span>
+                        <span>
+                          Categoria:{" "}
+                          <span className="text-stone-700">
+                            {CATEGORY_LABEL[r.category as Category] ?? r.category ?? "n/d"}
+                          </span>
+                        </span>
+                      </div>
+
+                      {r.items?.length ? (
+                        <ul className="divide-y divide-stone-100">
+                          {r.items.map((v, i) => (
+                            <li key={i} className="flex justify-between gap-2 py-1.5">
+                              <span className="min-w-0 truncate">
+                                {v.quantita ? `${v.quantita}× ` : ""}
+                                {v.descrizione}
+                              </span>
+                              <span className="tabular-nums text-stone-500">{eur(v.prezzo)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-stone-400">Nessuna voce registrata per questo scontrino.</p>
+                      )}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}

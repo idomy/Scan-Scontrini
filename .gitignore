@@ -11,3 +11,4 @@ next-env.d.ts
 # Local database files
 *.db
 ruvector.db
+.env*

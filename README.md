@@ -2,7 +2,7 @@
 
 MVP costruito per la candidatura Mamazen. Fotografi uno scontrino, l'AI (Claude vision) estrae i dati strutturati in JSON, tu verifichi e confermi, la spesa finisce su Supabase con una mini dashboard per categoria.
 
-**Demo live:** _[inserire link Vercel]_
+**Demo live:** https://scan-scontrini-delta.vercel.app
 **Tempo impiegato:** _[inserire, es. ~3 ore con Claude Code]_
 
 ## Come funziona
@@ -11,7 +11,7 @@ MVP costruito per la candidatura Mamazen. Fotografi uno scontrino, l'AI (Claude 
 2. `POST /api/scan` (route handler Next.js, server-side): chiama l'API Anthropic (claude-sonnet-4-5, vision) con un prompt a schema JSON rigido — categorie enum, `null` se illeggibile, mai valori inventati.
 3. Il parsing ha fallback progressivi (strip code fence → regex sul blocco JSON) e una normalizzazione dei tipi (numeri, date, categoria validata contro l'enum).
 4. L'utente rivede e corregge i campi estratti prima del salvataggio: l'AI propone, l'umano conferma.
-5. Salvataggio su Supabase (Postgres) e dashboard con totale e ripartizione per categoria.
+5. Salvataggio su Supabase (Postgres) e dashboard con totale e ripartizione per categoria. Ogni spesa mostra data e ora della scansione ed è espandibile per rivedere tutte le voci dello scontrino.
 
 ## Stack
 
