@@ -7,3 +7,7 @@ out/
 *.tsbuildinfo
 next-env.d.ts
 .DS_Store
+
+# Local database files
+*.db
+ruvector.db
